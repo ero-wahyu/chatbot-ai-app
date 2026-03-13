@@ -11,6 +11,7 @@ class Chat extends Model
     protected $fillable = [
         'guest_id',
         'title',
+        'persona',
     ];
 
     public function guest(): BelongsTo

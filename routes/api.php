@@ -7,6 +7,9 @@ Route::prefix('v1')->group(function () {
     // Public: Register and get token
     Route::post('/register', [ChatApiController::class, 'register']);
 
+    // Public: List available personas
+    Route::get('/personas', [ChatApiController::class, 'listPersonas']);
+
     // Protected: Requires Bearer token
     Route::post('/chat/text', [ChatApiController::class, 'sendText']);
     Route::post('/chat/image', [ChatApiController::class, 'sendImage']);

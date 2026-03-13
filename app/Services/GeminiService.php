@@ -25,18 +25,45 @@ class GeminiService
             throw new \RuntimeException('Gemini API key is not configured. Please set GEMINI_API_KEY in your .env file.');
         }
 
-        $this->client = new Client($apiKey);
-        $this->model = config('gemini.model', 'gemini-2.0-flash');
+        // Use v1beta API version (required for gemini-2.x models)
+        $this->client = (new Client($apiKey))->withV1BetaVersion();
+        $this->model = config('gemini.model', 'gemini-2.5-flash');
+    }
+
+    /**
+     * Get the system prompt for a given persona.
+     */
+    protected function getSystemPrompt(?string $persona): string
+    {
+        $persona = $persona ?: 'general';
+        $config = config("personas.{$persona}", config('personas.general'));
+
+        return $config['system_prompt'] ?? '';
+    }
+
+    /**
+     * Create a generative model with system instruction applied.
+     */
+    protected function createModel(?string $persona)
+    {
+        $generativeModel = $this->client->generativeModel($this->model);
+        $systemPrompt = $this->getSystemPrompt($persona);
+
+        if (! empty($systemPrompt)) {
+            $generativeModel = $generativeModel->withSystemInstruction($systemPrompt);
+        }
+
+        return $generativeModel;
     }
 
     /**
      * Send a text message and get AI response.
      */
-    public function sendTextMessage(string $message, ?Chat $chat = null): string
+    public function sendTextMessage(string $message, ?Chat $chat = null, ?string $persona = null): string
     {
         try {
             $history = $this->buildHistory($chat);
-            $generativeModel = $this->client->generativeModel($this->model);
+            $generativeModel = $this->createModel($persona);
 
             if (! empty($history)) {
                 $chatSession = $generativeModel->startChat()
@@ -49,15 +76,17 @@ class GeminiService
 
             return $response->text();
         } catch (\Exception $e) {
-            Log::error('Gemini API Error (text): '.$e->getMessage());
-            throw new \RuntimeException('Gagal mendapatkan respons dari AI. Silakan coba lagi.');
+            Log::error('Gemini API Error (text): '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \RuntimeException('Gagal mendapatkan respons dari AI: '.$e->getMessage());
         }
     }
 
     /**
      * Send an image with optional text prompt and get AI response.
      */
-    public function sendImageMessage(string $imagePath, string $mimeTypeStr, string $prompt = ''): string
+    public function sendImageMessage(string $imagePath, string $mimeTypeStr, string $prompt = '', ?string $persona = null): string
     {
         try {
             $imageData = file_get_contents($imagePath);
@@ -72,7 +101,7 @@ class GeminiService
             // Map mime type string to MimeType enum
             $mimeType = $this->mapImageMimeType($mimeTypeStr);
 
-            $generativeModel = $this->client->generativeModel($this->model);
+            $generativeModel = $this->createModel($persona);
 
             $response = $generativeModel->generateContent(
                 new TextPart($textPrompt),
@@ -83,16 +112,17 @@ class GeminiService
         } catch (\RuntimeException $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Gemini API Error (image): '.$e->getMessage());
-            throw new \RuntimeException('Gagal menganalisis gambar. Silakan coba lagi.');
+            Log::error('Gemini API Error (image): '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \RuntimeException('Gagal menganalisis gambar: '.$e->getMessage());
         }
     }
 
     /**
      * Send audio data and get AI response.
-     * Note: Audio is transcribed/analyzed using the text+file approach.
      */
-    public function sendAudioMessage(string $audioPath, string $mimeTypeStr): string
+    public function sendAudioMessage(string $audioPath, string $mimeTypeStr, ?string $persona = null): string
     {
         try {
             $audioData = file_get_contents($audioPath);
@@ -103,10 +133,8 @@ class GeminiService
 
             $base64Audio = base64_encode($audioData);
 
-            $generativeModel = $this->client->generativeModel($this->model);
+            $generativeModel = $this->createModel($persona);
 
-            // Use a custom MimeType approach for audio since SDK enum may not include audio types
-            // Send as inline data with the raw mime type
             $response = $generativeModel->generateContent(
                 new TextPart('Dengarkan audio ini dan berikan respons yang sesuai. Jika itu pertanyaan, jawab. Jika itu pernyataan, tanggapi dengan relevan.'),
                 new FilePart(MimeType::TEXT_PLAIN, $base64Audio)
@@ -116,8 +144,10 @@ class GeminiService
         } catch (\RuntimeException $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Gemini API Error (audio): '.$e->getMessage());
-            throw new \RuntimeException('Gagal memproses audio. Silakan coba lagi.');
+            Log::error('Gemini API Error (audio): '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \RuntimeException('Gagal memproses audio: '.$e->getMessage());
         }
     }
 

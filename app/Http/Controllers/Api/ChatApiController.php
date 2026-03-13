@@ -45,6 +45,22 @@ class ChatApiController extends Controller
     }
 
     /**
+     * List available personas.
+     */
+    public function listPersonas()
+    {
+        $personas = collect(config('personas'))->map(fn ($p, $key) => [
+            'key' => $key,
+            'name' => $p['name'],
+            'icon' => $p['icon'],
+            'description' => $p['description'],
+            'style' => $p['style'],
+        ]);
+
+        return response()->json(['personas' => $personas->values()]);
+    }
+
+    /**
      * List all chats.
      */
     public function listChats(Request $request)
@@ -57,6 +73,7 @@ class ChatApiController extends Controller
             ->map(fn ($chat) => [
                 'id' => $chat->id,
                 'title' => $chat->title,
+                'persona' => $chat->persona,
                 'created_at' => $chat->created_at->toISOString(),
                 'updated_at' => $chat->updated_at->toISOString(),
             ]);
@@ -71,15 +88,19 @@ class ChatApiController extends Controller
     {
         $guest = $this->getGuest($request);
 
+        $persona = $request->input('persona', 'general');
+
         $chat = Chat::create([
             'guest_id' => $guest->id,
             'title' => 'Chat Baru',
+            'persona' => $persona,
         ]);
 
         return response()->json([
             'chat' => [
                 'id' => $chat->id,
                 'title' => $chat->title,
+                'persona' => $chat->persona,
                 'created_at' => $chat->created_at->toISOString(),
             ],
         ], 201);
@@ -109,6 +130,7 @@ class ChatApiController extends Controller
             'chat' => [
                 'id' => $chat->id,
                 'title' => $chat->title,
+                'persona' => $chat->persona,
             ],
             'messages' => $messages,
         ]);
@@ -124,9 +146,11 @@ class ChatApiController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:5000',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         Message::create([
             'chat_id' => $chat->id,
@@ -137,7 +161,7 @@ class ChatApiController extends Controller
 
         try {
             $gemini = new GeminiService;
-            $aiResponse = $gemini->sendTextMessage($validated['message'], $chat);
+            $aiResponse = $gemini->sendTextMessage($validated['message'], $chat, $chat->persona);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -158,6 +182,7 @@ class ChatApiController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'response' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -179,9 +204,11 @@ class ChatApiController extends Controller
             'image' => 'required|image|max:10240',
             'prompt' => 'nullable|string|max:5000',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         $path = $request->file('image')->store('chat-images', 'public');
 
@@ -198,7 +225,7 @@ class ChatApiController extends Controller
             $gemini = new GeminiService;
             $fullPath = Storage::disk('public')->path($path);
             $mimeType = $request->file('image')->getMimeType();
-            $aiResponse = $gemini->sendImageMessage($fullPath, $mimeType, $validated['prompt'] ?? '');
+            $aiResponse = $gemini->sendImageMessage($fullPath, $mimeType, $validated['prompt'] ?? '', $chat->persona);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -219,6 +246,7 @@ class ChatApiController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'response' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -239,9 +267,11 @@ class ChatApiController extends Controller
         $validated = $request->validate([
             'audio' => 'required|file|max:10240',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         $path = $request->file('audio')->store('chat-audio', 'public');
 
@@ -257,7 +287,7 @@ class ChatApiController extends Controller
             $gemini = new GeminiService;
             $fullPath = Storage::disk('public')->path($path);
             $mimeType = $request->file('audio')->getMimeType() ?: 'audio/webm';
-            $aiResponse = $gemini->sendAudioMessage($fullPath, $mimeType);
+            $aiResponse = $gemini->sendAudioMessage($fullPath, $mimeType, $chat->persona);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -278,6 +308,7 @@ class ChatApiController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'response' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -327,7 +358,7 @@ class ChatApiController extends Controller
     /**
      * Resolve or create a chat.
      */
-    protected function resolveChat(Guest $guest, ?int $chatId): Chat
+    protected function resolveChat(Guest $guest, ?int $chatId, string $persona = 'general'): Chat
     {
         if ($chatId) {
             $chat = Chat::where('id', $chatId)
@@ -342,6 +373,7 @@ class ChatApiController extends Controller
         return Chat::create([
             'guest_id' => $guest->id,
             'title' => 'Chat Baru',
+            'persona' => $persona,
         ]);
     }
 }

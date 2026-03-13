@@ -24,8 +24,9 @@ class ChatController extends Controller
         }
 
         $chats = $guest->chats()->orderBy('updated_at', 'desc')->get();
+        $personas = config('personas');
 
-        return view('chat', compact('guest', 'chats'));
+        return view('chat', compact('guest', 'chats', 'personas'));
     }
 
     /**
@@ -64,14 +65,18 @@ class ChatController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        $persona = $request->input('persona', 'general');
+
         $chat = Chat::create([
             'guest_id' => $guest->id,
             'title' => 'Chat Baru',
+            'persona' => $persona,
         ]);
 
         return response()->json([
             'id' => $chat->id,
             'title' => $chat->title,
+            'persona' => $chat->persona,
             'created_at' => $chat->created_at->toISOString(),
         ]);
     }
@@ -93,6 +98,7 @@ class ChatController extends Controller
             ->map(fn ($chat) => [
                 'id' => $chat->id,
                 'title' => $chat->title,
+                'persona' => $chat->persona,
                 'updated_at' => $chat->updated_at->toISOString(),
             ]);
 
@@ -119,7 +125,10 @@ class ChatController extends Controller
             'created_at' => $msg->created_at->toISOString(),
         ]);
 
-        return response()->json($messages);
+        return response()->json([
+            'persona' => $chat->persona,
+            'messages' => $messages,
+        ]);
     }
 
     /**
@@ -136,9 +145,11 @@ class ChatController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:5000',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         // Save user message
         Message::create([
@@ -151,7 +162,7 @@ class ChatController extends Controller
         // Get AI response
         try {
             $gemini = new GeminiService;
-            $aiResponse = $gemini->sendTextMessage($validated['message'], $chat);
+            $aiResponse = $gemini->sendTextMessage($validated['message'], $chat, $chat->persona);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
@@ -178,6 +189,7 @@ class ChatController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'message' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -203,9 +215,11 @@ class ChatController extends Controller
             'image' => 'required|image|max:10240',
             'prompt' => 'nullable|string|max:5000',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         // Store image
         $path = $request->file('image')->store('chat-images', 'public');
@@ -225,7 +239,7 @@ class ChatController extends Controller
             $gemini = new GeminiService;
             $fullPath = Storage::disk('public')->path($path);
             $mimeType = $request->file('image')->getMimeType();
-            $aiResponse = $gemini->sendImageMessage($fullPath, $mimeType, $validated['prompt'] ?? '');
+            $aiResponse = $gemini->sendImageMessage($fullPath, $mimeType, $validated['prompt'] ?? '', $chat->persona);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
@@ -251,6 +265,7 @@ class ChatController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'message' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -275,9 +290,11 @@ class ChatController extends Controller
         $validated = $request->validate([
             'audio' => 'required|file|max:10240',
             'chat_id' => 'nullable|exists:chats,id',
+            'persona' => 'nullable|string|max:50',
         ]);
 
-        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null);
+        $persona = $validated['persona'] ?? 'general';
+        $chat = $this->resolveChat($guest, $validated['chat_id'] ?? null, $persona);
 
         // Store audio
         $path = $request->file('audio')->store('chat-audio', 'public');
@@ -296,7 +313,7 @@ class ChatController extends Controller
             $gemini = new GeminiService;
             $fullPath = Storage::disk('public')->path($path);
             $mimeType = $request->file('audio')->getMimeType() ?: 'audio/webm';
-            $aiResponse = $gemini->sendAudioMessage($fullPath, $mimeType);
+            $aiResponse = $gemini->sendAudioMessage($fullPath, $mimeType, $chat->persona);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
@@ -322,6 +339,7 @@ class ChatController extends Controller
         return response()->json([
             'chat_id' => $chat->id,
             'chat_title' => $chat->title,
+            'persona' => $chat->persona,
             'message' => [
                 'id' => $assistantMessage->id,
                 'role' => 'assistant',
@@ -365,7 +383,7 @@ class ChatController extends Controller
     /**
      * Resolve or create a chat.
      */
-    protected function resolveChat(Guest $guest, ?int $chatId): Chat
+    protected function resolveChat(Guest $guest, ?int $chatId, string $persona = 'general'): Chat
     {
         if ($chatId) {
             $chat = Chat::where('id', $chatId)
@@ -380,6 +398,7 @@ class ChatController extends Controller
         return Chat::create([
             'guest_id' => $guest->id,
             'title' => 'Chat Baru',
+            'persona' => $persona,
         ]);
     }
 }

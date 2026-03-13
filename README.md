@@ -1,20 +1,22 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 12">
-  <img src="https://img.shields.io/badge/Gemini_AI-2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI">
+  <img src="https://img.shields.io/badge/Gemini_AI-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI">
   <img src="https://img.shields.io/badge/TailwindCSS-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="TailwindCSS">
   <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.2+">
 </p>
 
-# 🤖 Chatbot AI — Gemini AI Chatbot
+# ✨ NovaMind AI — Ignite Ideas with AI
 
-Aplikasi chatbot web responsif yang terintegrasi dengan **Gemini AI** dari Google. Mendukung input **teks**, **gambar**, dan **audio** dengan antarmuka modern dark-mode dan REST API untuk integrasi eksternal.
+Aplikasi chatbot web responsif berbasis **Gemini AI** dengan sistem **persona** multi-mode. Mendukung input **teks**, **gambar**, dan **audio** dengan antarmuka modern dark-mode, smart recommendations, dan REST API untuk integrasi eksternal.
 
 ---
 
 ## 📋 Daftar Isi
 
 - [Fitur](#-fitur)
+- [Sistem Persona](#-sistem-persona)
 - [Screenshot](#-screenshot)
+- [Parameter Kreatif](#-parameter-kreatif)
 - [System Requirements](#-system-requirements)
 - [Instalasi](#-instalasi)
 - [Konfigurasi](#-konfigurasi)
@@ -29,16 +31,42 @@ Aplikasi chatbot web responsif yang terintegrasi dengan **Gemini AI** dari Googl
 
 ## ✨ Fitur
 
-| Fitur                     | Deskripsi                                                         |
-| ------------------------- | ----------------------------------------------------------------- |
-| 💬 **Chat Teks**          | Kirim pesan teks dan dapatkan respons AI secara real-time         |
-| 🖼️ **Analisis Gambar**    | Upload gambar untuk dianalisis oleh Gemini AI                     |
-| 🎤 **Input Audio**        | Rekam suara langsung dari browser untuk diproses AI               |
-| 📜 **Riwayat Chat**       | Simpan dan muat kembali riwayat percakapan                        |
-| 🌙 **Dark Mode**          | Antarmuka modern dark-mode dengan glassmorphism                   |
-| 📱 **Responsif**          | Tampilan optimal di desktop, tablet, dan mobile                   |
-| 🔌 **REST API**           | API lengkap untuk integrasi aplikasi eksternal                    |
-| 👤 **Guest Registration** | Registrasi sederhana tanpa login — cukup nama, email, dan telepon |
+| Fitur                          | Deskripsi                                                              |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| 💬 **Chat Teks**               | Kirim pesan teks dan dapatkan respons AI secara real-time              |
+| 🖼️ **Analisis Gambar**        | Upload gambar untuk dianalisis oleh Gemini AI                          |
+| 🎤 **Input Audio**             | Rekam suara langsung dari browser untuk diproses AI                    |
+| 📜 **Riwayat Chat**            | Simpan dan muat kembali riwayat percakapan                             |
+| 🎭 **Sistem Persona**          | 7 mode asisten AI dengan system prompt, saran, dan rekomendasi khusus  |
+| 💡 **Smart Recommendations**   | Rekomendasi kontekstual otomatis setelah setiap respons AI             |
+| 🔮 **Dynamic Suggestions**     | Saran pertanyaan dinamis berdasarkan persona yang dipilih              |
+| 🌙 **Dark Mode**               | Antarmuka modern dark-mode dengan glassmorphism                        |
+| 📱 **Responsif**               | Tampilan optimal di desktop, tablet, dan mobile                        |
+| 🔌 **REST API**                | API lengkap untuk integrasi aplikasi eksternal                         |
+| 👤 **Guest Registration**      | Registrasi sederhana tanpa login — cukup nama, email, dan telepon      |
+
+---
+
+## 🎭 Sistem Persona
+
+NovaMind AI memiliki **7 persona** yang dapat dipilih pengguna melalui UI persona selector. Setiap persona memiliki **system prompt**, **saran pertanyaan**, dan **smart recommendations** yang berbeda.
+
+| Persona | Nama | Icon | Deskripsi |
+| --- | --- | --- | --- |
+| `general` | **NovaMind AI** | ✨ | Asisten AI serba bisa untuk berbagai kebutuhan |
+| `customer_service` | **Customer Service Bot** | 🏢 | Layanan pelanggan 24/7 yang responsif dan profesional |
+| `education` | **Education Bot** | 📚 | Tutor interaktif untuk memahami berbagai materi pelajaran |
+| `travel` | **Travel Assistant** | ✈️ | Rekomendasi perjalanan dan perencanaan itinerary |
+| `productivity` | **Productivity Assistant** | 📋 | Manajemen tugas, brainstorming, dan penulisan profesional |
+| `health` | **Health & Wellness Bot** | 🏥 | Informasi kesehatan umum dan tips gaya hidup sehat |
+| `hobby` | **Hobby & Lifestyle Bot** | 🎨 | Inspirasi kreatif untuk hobi, resep, DIY, dan lifestyle |
+
+### Cara Kerja Persona
+
+1. **System Prompt** — Setiap persona memiliki system prompt unik yang dikirim ke Gemini AI via `withSystemInstruction()`
+2. **Dynamic Suggestions** — Setiap persona menampilkan saran pertanyaan berbeda di welcome screen
+3. **Smart Recommendations** — Setelah AI merespons, tombol rekomendasi lanjutan muncul sesuai konteks persona
+4. **Konfigurasi** — Semua persona dikonfigurasi di `config/personas.php`
 
 ---
 
@@ -52,13 +80,56 @@ Pengguna mengisi nama, email, dan nomor telepon untuk memulai sesi chat.
   <img src="docs/screenshots/register.png" alt="Halaman Registrasi" width="480">
 </p>
 
-### Halaman Chat
+### Halaman Chat dengan Persona Selector
 
-Antarmuka chat dengan sidebar riwayat percakapan, area pesan, dan input multimodal (teks, gambar, audio).
+Antarmuka chat dengan sidebar riwayat percakapan, persona selector grid, dan input multimodal (teks, gambar, audio).
 
 <p align="center">
   <img src="docs/screenshots/chat.png" alt="Halaman Chat" width="720">
 </p>
+
+---
+
+## 🎛️ Parameter Kreatif
+
+### 1. 🗣️ Gaya Bahasa
+
+| Gaya | Deskripsi | Digunakan Pada |
+| --- | --- | --- |
+| **Formal** | Bahasa baku, profesional, dan sopan | Customer Service, Health |
+| **Santai** | Bahasa kasual, ramah, menggunakan emoji | General, Education, Travel, Hobby |
+| **Teknis** | Terminologi spesifik, detail, presisi | Productivity |
+
+**Konfigurasi:** Gaya bahasa diatur di system prompt setiap persona dalam `config/personas.php`.
+
+### 2. 🧠 Domain Pengetahuan
+
+Setiap persona difokuskan pada domain tertentu melalui system prompt:
+
+```php
+// config/personas.php
+'education' => [
+    'system_prompt' => 'Kamu adalah NovaMind AI dalam mode Education Bot. 
+        Kamu adalah tutor yang sabar, adaptif, dan antusias...',
+],
+```
+
+### 3. 💾 Memory (Konteks Percakapan)
+
+| Fitur Memory | Status | Deskripsi |
+| --- | --- | --- |
+| **Short-term Memory** | ✅ Aktif | 20 pesan terakhir dikirim sebagai konteks ke Gemini AI |
+| **Persistent History** | ✅ Aktif | Semua pesan tersimpan di database, dapat dimuat ulang |
+| **Multi-session** | ✅ Aktif | Setiap guest bisa memiliki banyak sesi chat terpisah |
+| **Persona per Chat** | ✅ Aktif | Setiap chat menyimpan persona yang digunakan |
+
+### 4. 💡 Fitur Rekomendasi
+
+| Tipe | Deskripsi |
+| --- | --- |
+| **Dynamic Suggestions** | Saran pertanyaan di welcome screen, berubah sesuai persona yang dipilih |
+| **Smart Recommendations** | Tombol rekomendasi lanjutan muncul otomatis setelah respons AI |
+| **Persona-aware** | Rekomendasi disesuaikan dengan konteks persona aktif |
 
 ---
 
@@ -165,13 +236,9 @@ php artisan db:seed
 
 ### Quick Setup (Satu Perintah)
 
-Alternatif, gunakan script setup bawaan:
-
 ```bash
 composer run setup
 ```
-
-Script ini akan menjalankan `composer install`, copy `.env`, `key:generate`, `migrate`, `npm install`, dan `npm run build` secara otomatis.
 
 ---
 
@@ -188,25 +255,18 @@ Script ini akan menjalankan `composer install`, copy `.env`, `key:generate`, `mi
 | `SESSION_DRIVER`    | Driver session              | `database`         |
 | `QUEUE_CONNECTION`  | Driver queue                | `database`         |
 
-### File Konfigurasi Gemini
+### File Konfigurasi
 
-Konfigurasi Gemini berada di `config/gemini.php`:
-
-```php
-return [
-    'api_key'    => env('GEMINI_API_KEY', ''),
-    'model'      => env('GEMINI_MODEL', 'gemini-2.5-flash'),
-    'max_tokens' => env('GEMINI_MAX_TOKENS', 8192),
-];
-```
+| File | Deskripsi |
+| --- | --- |
+| `config/gemini.php` | Konfigurasi Gemini AI (API key, model, max tokens) |
+| `config/personas.php` | Konfigurasi persona (system prompt, suggestions, icons, colors) |
 
 ---
 
 ## ▶️ Menjalankan Aplikasi
 
 ### Mode Development
-
-Gunakan script `dev` untuk menjalankan semua service secara bersamaan:
 
 ```bash
 composer run dev
@@ -248,30 +308,33 @@ Akses aplikasi di: **http://localhost:8000**
 1. Buka `http://localhost:8000`
 2. Isi form registrasi: **Nama Lengkap**, **Email**, dan **No. Telepon**
 3. Klik tombol **"Mulai Chat"**
-4. Session token akan disimpan secara otomatis
 
-### 2. Chat Teks
+### 2. Pilih Persona
+
+1. Di halaman chat, pilih persona dari **grid persona selector** di welcome screen
+2. Persona yang dipilih akan mengubah system prompt AI, saran pertanyaan, dan rekomendasi
+3. Persona default: **NovaMind AI** (general)
+
+### 3. Chat Teks
 
 1. Ketik pesan di kolom input di bagian bawah
-2. Tekan **Enter** atau klik tombol **Send** (ikon panah)
-3. Tunggu respons dari Gemini AI (ditandai dengan animasi typing indicator)
+2. Tekan **Enter** atau klik tombol **Send**
+3. Setelah AI merespons, tombol **Smart Recommendations** akan muncul untuk pertanyaan lanjutan
 
-### 3. Upload Gambar
+### 4. Upload Gambar
 
 1. Klik ikon **gambar** (📷) di sebelah kiri kolom input
 2. Pilih file gambar (max 10MB, format: JPG, PNG, WebP, HEIC)
 3. _Opsional:_ Tambahkan deskripsi/prompt di kolom teks
 4. Klik **Send** — AI akan menganalisis dan menjelaskan gambar
 
-### 4. Rekam Audio
+### 5. Rekam Audio
 
 1. Klik ikon **mikrofon** (🎤)
 2. Izinkan akses mikrofon jika diminta browser
-3. Rekam pesan suara Anda (ditandai indikator recording merah)
-4. Klik ikon mikrofon lagi untuk menghentikan dan mengirim
-5. AI akan memproses audio dan memberikan respons
+3. Klik ikon mikrofon lagi untuk menghentikan dan mengirim
 
-### 5. Kelola Riwayat Chat
+### 6. Kelola Riwayat Chat
 
 - **Chat Baru:** Klik tombol **"+ Chat Baru"** di sidebar
 - **Muat Chat:** Klik judul chat di sidebar untuk memuat riwayat
@@ -299,8 +362,6 @@ Accept: application/json
 ---
 
 ### 1. Register Guest
-
-Registrasi guest baru dan dapatkan token autentikasi.
 
 ```http
 POST /api/v1/register
@@ -333,7 +394,31 @@ Content-Type: application/json
 
 ---
 
-### 2. Kirim Pesan Teks
+### 2. List Personas
+
+```http
+GET /api/v1/personas
+```
+
+**Response** `200 OK`:
+
+```json
+{
+    "personas": [
+        {
+            "key": "general",
+            "name": "NovaMind AI",
+            "icon": "✨",
+            "description": "Asisten AI serba bisa untuk berbagai kebutuhan Anda",
+            "style": "santai"
+        }
+    ]
+}
+```
+
+---
+
+### 3. Kirim Pesan Teks
 
 ```http
 POST /api/v1/chat/text
@@ -346,11 +431,12 @@ Content-Type: application/json
 ```json
 {
     "message": "Apa itu artificial intelligence?",
-    "chat_id": 1
+    "chat_id": 1,
+    "persona": "education"
 }
 ```
 
-> `chat_id` opsional. Jika tidak diisi, chat baru akan dibuat otomatis.
+> `chat_id` dan `persona` opsional. Jika `chat_id` tidak diisi, chat baru akan dibuat otomatis.
 
 **Response** `200 OK`:
 
@@ -358,6 +444,7 @@ Content-Type: application/json
 {
     "chat_id": 1,
     "chat_title": "Apa itu artificial intelligence?",
+    "persona": "education",
     "response": {
         "id": 2,
         "role": "assistant",
@@ -370,7 +457,7 @@ Content-Type: application/json
 
 ---
 
-### 3. Kirim Gambar
+### 4. Kirim Gambar
 
 ```http
 POST /api/v1/chat/image
@@ -379,31 +466,17 @@ Content-Type: multipart/form-data
 ```
 
 **Form Data:**
+
 | Field | Type | Required | Deskripsi |
 |-------|------|----------|-----------|
 | `image` | File | ✅ | File gambar (max 10MB) |
 | `prompt` | String | ❌ | Prompt untuk analisis gambar |
 | `chat_id` | Integer | ❌ | ID chat yang ada |
-
-**Response** `200 OK`:
-
-```json
-{
-    "chat_id": 1,
-    "chat_title": "📷 Gambar dikirim",
-    "response": {
-        "id": 4,
-        "role": "assistant",
-        "content": "Gambar ini menunjukkan...",
-        "type": "text",
-        "created_at": "2026-03-13T12:05:00.000000Z"
-    }
-}
-```
+| `persona` | String | ❌ | Key persona (default: general) |
 
 ---
 
-### 4. Kirim Audio
+### 5. Kirim Audio
 
 ```http
 POST /api/v1/chat/audio
@@ -412,125 +485,56 @@ Content-Type: multipart/form-data
 ```
 
 **Form Data:**
+
 | Field | Type | Required | Deskripsi |
 |-------|------|----------|-----------|
 | `audio` | File | ✅ | File audio (max 10MB) |
 | `chat_id` | Integer | ❌ | ID chat yang ada |
-
-**Response** `200 OK`:
-
-```json
-{
-    "chat_id": 1,
-    "chat_title": "🎤 Pesan suara",
-    "response": {
-        "id": 6,
-        "role": "assistant",
-        "content": "Berdasarkan audio Anda...",
-        "type": "text",
-        "created_at": "2026-03-13T12:10:00.000000Z"
-    }
-}
-```
+| `persona` | String | ❌ | Key persona (default: general) |
 
 ---
 
-### 5. Buat Chat Baru
+### 6. Buat Chat Baru
 
 ```http
 POST /api/v1/chat/new
 Authorization: Bearer {token}
+Content-Type: application/json
 ```
 
-**Response** `201 Created`:
+**Body (opsional):**
 
 ```json
 {
-    "chat": {
-        "id": 2,
-        "title": "Chat Baru",
-        "created_at": "2026-03-13T12:15:00.000000Z"
-    }
+    "persona": "travel"
 }
 ```
 
 ---
 
-### 6. Daftar Semua Chat
+### 7. Daftar Semua Chat
 
 ```http
 GET /api/v1/chats
 Authorization: Bearer {token}
 ```
 
-**Response** `200 OK`:
-
-```json
-{
-    "chats": [
-        {
-            "id": 1,
-            "title": "Apa itu AI?",
-            "created_at": "2026-03-13T12:00:00.000000Z",
-            "updated_at": "2026-03-13T12:10:00.000000Z"
-        }
-    ]
-}
-```
-
 ---
 
-### 7. Riwayat Chat
+### 8. Riwayat Chat
 
 ```http
 GET /api/v1/chat/{chat_id}/history
 Authorization: Bearer {token}
 ```
 
-**Response** `200 OK`:
-
-```json
-{
-    "chat": {
-        "id": 1,
-        "title": "Apa itu AI?"
-    },
-    "messages": [
-        {
-            "id": 1,
-            "role": "user",
-            "content": "Apa itu AI?",
-            "type": "text",
-            "file_url": null,
-            "created_at": "2026-03-13T12:00:00.000000Z"
-        },
-        {
-            "id": 2,
-            "role": "assistant",
-            "content": "AI adalah...",
-            "type": "text",
-            "file_url": null,
-            "created_at": "2026-03-13T12:00:01.000000Z"
-        }
-    ]
-}
-```
-
 ---
 
-### 8. Hapus Chat
+### 9. Hapus Chat
 
 ```http
 DELETE /api/v1/chat/{chat_id}
 Authorization: Bearer {token}
-```
-
-**Response** `200 OK`:
-
-```json
-{
-    "message": "Chat berhasil dihapus"
-}
 ```
 
 ---
@@ -543,14 +547,6 @@ Authorization: Bearer {token}
 | `403 Forbidden`             | Akses ditolak (chat milik user lain)      |
 | `422 Unprocessable Entity`  | Validasi input gagal                      |
 | `500 Internal Server Error` | Error sisi server (Gemini API gagal, dll) |
-
-**Contoh Error:**
-
-```json
-{
-    "error": "Gagal mendapatkan respons dari AI. Silakan coba lagi."
-}
-```
 
 ---
 
@@ -565,28 +561,29 @@ chatbot-ai-app/
 │   │       └── ChatApiController.php  # Controller REST API (Bearer token)
 │   ├── Models/
 │   │   ├── Guest.php                  # Model guest/pengguna
-│   │   ├── Chat.php                   # Model sesi chat
+│   │   ├── Chat.php                   # Model sesi chat (+ persona field)
 │   │   └── Message.php                # Model pesan
 │   └── Services/
-│       └── GeminiService.php          # Integrasi Gemini AI API
+│       └── GeminiService.php          # Integrasi Gemini AI API + system prompt
 ├── config/
-│   └── gemini.php                     # Konfigurasi Gemini
+│   ├── gemini.php                     # Konfigurasi Gemini AI
+│   └── personas.php                   # Konfigurasi persona (7 persona)
 ├── database/
 │   ├── migrations/
 │   │   ├── create_guests_table.php
 │   │   ├── create_chats_table.php
 │   │   └── create_messages_table.php
 │   └── seeders/
-│       └── GuestSeeder.php            # Data contoh
+│       └── DatabaseSeeder.php         # Data contoh
 ├── resources/
 │   ├── views/
 │   │   ├── layouts/app.blade.php      # Layout utama
 │   │   ├── register.blade.php         # Halaman registrasi
-│   │   └── chat.blade.php             # Halaman chat
+│   │   └── chat.blade.php             # Halaman chat + persona selector
 │   ├── js/
 │   │   ├── app.js                     # Entry point
 │   │   ├── bootstrap.js               # Axios setup
-│   │   └── chat.js                    # Logika chat (text, image, audio)
+│   │   └── chat.js                    # Logika chat + persona + recommendations
 │   └── css/
 │       └── app.css                    # Stylesheet (TailwindCSS)
 ├── routes/
@@ -624,15 +621,11 @@ php artisan config:clear
 
 ### Gambar tidak muncul setelah upload
 
-Pastikan symbolic link storage sudah dibuat:
-
 ```bash
 php artisan storage:link
 ```
 
 ### Error "CSRF token mismatch"
-
-Clear cache dan session:
 
 ```bash
 php artisan cache:clear
@@ -640,8 +633,6 @@ php artisan config:clear
 ```
 
 ### Vite manifest not found
-
-Build ulang assets:
 
 ```bash
 npm run build
@@ -656,5 +647,6 @@ Proyek ini menggunakan lisensi [MIT](LICENSE).
 ---
 
 <p align="center">
-  Dibuat dengan sadar menggunakan <strong>Laravel 12</strong>
+  <strong>NovaMind AI</strong> — Ignite Ideas with AI ✨<br>
+  Dibuat dengan Laravel 12 + Gemini AI
 </p>

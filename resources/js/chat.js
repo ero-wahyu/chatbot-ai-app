@@ -1,10 +1,11 @@
 /**
- * Chatbot AI - Chat Module
- * Handles text, image, and audio messaging with Gemini AI
+ * NovaMind AI — Chat Module
+ * Handles text, image, and audio messaging with persona-based Gemini AI
  */
 
 // State
 let currentChatId = null;
+let currentPersona = "general";
 let isProcessing = false;
 let mediaRecorder = null;
 let audioChunks = [];
@@ -28,9 +29,12 @@ const recordingTime = document.getElementById("recording-time");
 const typingIndicator = document.getElementById("typing-indicator");
 const welcomeMessage = document.getElementById("welcome-message");
 const chatTitle = document.getElementById("chat-title");
+const chatPersonaLabel = document.getElementById("chat-persona-label");
+const headerPersonaIcon = document.getElementById("header-persona-icon");
 const chatList = document.getElementById("chat-list");
 const newChatBtn = document.getElementById("new-chat-btn");
 const deleteChatBtn = document.getElementById("delete-chat-btn");
+const personaSuggestions = document.getElementById("persona-suggestions");
 
 // Config
 const config = window.ChatConfig;
@@ -40,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderChatList();
     setupEventListeners();
     autoResizeTextarea();
+    renderPersonaSuggestions("general");
 });
 
 function setupEventListeners() {
@@ -51,12 +56,62 @@ function setupEventListeners() {
     newChatBtn.addEventListener("click", createNewChat);
     deleteChatBtn.addEventListener("click", deleteCurrentChat);
 
-    // Suggestion buttons
-    document.querySelectorAll(".suggestion-btn").forEach((btn) => {
+    // Persona cards
+    document.querySelectorAll(".persona-card").forEach((card) => {
+        card.addEventListener("click", () => {
+            selectPersona(card.dataset.persona);
+        });
+    });
+}
+
+// ==================== PERSONA MANAGEMENT ====================
+
+function selectPersona(personaKey) {
+    currentPersona = personaKey;
+    const persona = config.personas[personaKey];
+
+    // Update card highlight
+    document.querySelectorAll(".persona-card").forEach((card) => {
+        if (card.dataset.persona === personaKey) {
+            card.classList.add("ring-2", "ring-indigo-500/50", "bg-gray-800/60");
+        } else {
+            card.classList.remove("ring-2", "ring-indigo-500/50", "bg-gray-800/60");
+        }
+    });
+
+    // Update header
+    updateHeaderForPersona(personaKey);
+
+    // Render suggestions
+    renderPersonaSuggestions(personaKey);
+
+    messageInput.focus();
+}
+
+function updateHeaderForPersona(personaKey) {
+    const persona = config.personas[personaKey];
+    if (!persona) return;
+
+    chatTitle.textContent = persona.name;
+    chatPersonaLabel.textContent = persona.description;
+    headerPersonaIcon.textContent = persona.icon;
+}
+
+function renderPersonaSuggestions(personaKey) {
+    const persona = config.personas[personaKey];
+    if (!persona || !persona.suggestions) return;
+
+    personaSuggestions.innerHTML = "";
+    persona.suggestions.forEach((s) => {
+        const btn = document.createElement("button");
+        btn.className =
+            "suggestion-btn px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 rounded-xl text-sm text-gray-300 transition-all duration-200 hover:border-indigo-500/30";
+        btn.textContent = `${s.icon} ${s.label}`;
         btn.addEventListener("click", () => {
-            messageInput.value = btn.dataset.text;
+            messageInput.value = s.text;
             sendMessage();
         });
+        personaSuggestions.appendChild(btn);
     });
 }
 
@@ -85,6 +140,7 @@ async function sendMessage() {
     try {
         const formData = new FormData();
         formData.append("message", text);
+        formData.append("persona", currentPersona);
         if (currentChatId) formData.append("chat_id", currentChatId);
 
         const response = await fetch(config.routes.sendText, {
@@ -103,11 +159,13 @@ async function sendMessage() {
         }
 
         currentChatId = data.chat_id;
+        if (data.persona) currentPersona = data.persona;
         chatTitle.textContent = data.chat_title;
         deleteChatBtn.classList.remove("hidden");
 
         appendMessage("assistant", data.message.content, "text");
-        updateChatList(data.chat_id, data.chat_title);
+        appendSmartRecommendations(data.message.content);
+        updateChatList(data.chat_id, data.chat_title, data.persona);
     } catch (error) {
         appendError(error.message);
     } finally {
@@ -132,6 +190,7 @@ async function sendImageMessage(prompt = "") {
     try {
         const formData = new FormData();
         formData.append("image", selectedImage);
+        formData.append("persona", currentPersona);
         if (prompt) formData.append("prompt", prompt);
         if (currentChatId) formData.append("chat_id", currentChatId);
 
@@ -155,11 +214,13 @@ async function sendImageMessage(prompt = "") {
         }
 
         currentChatId = data.chat_id;
+        if (data.persona) currentPersona = data.persona;
         chatTitle.textContent = data.chat_title;
         deleteChatBtn.classList.remove("hidden");
 
         appendMessage("assistant", data.message.content, "text");
-        updateChatList(data.chat_id, data.chat_title);
+        appendSmartRecommendations(data.message.content);
+        updateChatList(data.chat_id, data.chat_title, data.persona);
     } catch (error) {
         appendError(error.message);
     } finally {
@@ -176,6 +237,7 @@ async function sendAudioMessage(audioBlob) {
     try {
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
+        formData.append("persona", currentPersona);
         if (currentChatId) formData.append("chat_id", currentChatId);
 
         const response = await fetch(config.routes.sendAudio, {
@@ -194,16 +256,101 @@ async function sendAudioMessage(audioBlob) {
         }
 
         currentChatId = data.chat_id;
+        if (data.persona) currentPersona = data.persona;
         chatTitle.textContent = data.chat_title;
         deleteChatBtn.classList.remove("hidden");
 
         appendMessage("assistant", data.message.content, "text");
-        updateChatList(data.chat_id, data.chat_title);
+        appendSmartRecommendations(data.message.content);
+        updateChatList(data.chat_id, data.chat_title, data.persona);
     } catch (error) {
         appendError(error.message);
     } finally {
         setProcessing(false);
     }
+}
+
+// ==================== SMART RECOMMENDATIONS ====================
+
+function appendSmartRecommendations(aiResponse) {
+    const recommendations = generateRecommendations(aiResponse);
+    if (!recommendations.length) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "flex flex-wrap gap-2 ml-0 sm:ml-11 mt-2 max-w-full animate-fadeIn";
+
+    recommendations.forEach((rec) => {
+        const btn = document.createElement("button");
+        btn.className =
+            "recommendation-btn px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 rounded-lg text-xs text-indigo-300 hover:text-indigo-200 transition-all duration-200 whitespace-nowrap max-w-[calc(100%-1rem)] sm:max-w-none truncate";
+        btn.textContent = `${rec.icon} ${rec.label}`;
+        btn.title = rec.text;
+        btn.addEventListener("click", () => {
+            messageInput.value = rec.text;
+            // Remove recommendations after click
+            wrapper.remove();
+            sendMessage();
+        });
+        wrapper.appendChild(btn);
+    });
+
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+}
+
+function generateRecommendations(response) {
+    if (!response || response.length < 50) return [];
+
+    const persona = config.personas[currentPersona];
+    const recs = [];
+
+    // Context-aware recommendations based on persona
+    if (currentPersona === "education") {
+        recs.push(
+            { icon: "🔍", label: "Jelaskan lebih detail", text: "Bisakah kamu jelaskan bagian terakhir lebih detail lagi?" },
+            { icon: "📝", label: "Berikan contoh soal", text: "Berikan contoh soal latihan dari materi yang baru dijelaskan" },
+            { icon: "🧩", label: "Analogi lain", text: "Berikan analogi atau penjelasan dengan cara yang berbeda" },
+        );
+    } else if (currentPersona === "customer_service") {
+        recs.push(
+            { icon: "✅", label: "Masalah teratasi", text: "Terima kasih, masalah saya sudah teratasi" },
+            { icon: "❓", label: "Pertanyaan lain", text: "Saya punya pertanyaan lain terkait layanan" },
+            { icon: "📞", label: "Hubungi tim", text: "Saya ingin dihubungi oleh tim terkait" },
+        );
+    } else if (currentPersona === "travel") {
+        recs.push(
+            { icon: "💰", label: "Estimasi budget", text: "Berapa estimasi total biaya untuk rencana ini?" },
+            { icon: "🏨", label: "Rekomendasi hotel", text: "Rekomendasikan hotel dengan harga terjangkau di lokasi tersebut" },
+            { icon: "🗺️", label: "Alternatif destinasi", text: "Berikan alternatif destinasi wisata lainnya" },
+        );
+    } else if (currentPersona === "productivity") {
+        recs.push(
+            { icon: "📊", label: "Buat template", text: "Bisa dibuatkan template-nya dalam format yang siap pakai?" },
+            { icon: "⚡", label: "Tips efisiensi", text: "Berikan tips untuk mengerjakan ini lebih efisien" },
+            { icon: "📋", label: "Action items", text: "Buatkan daftar action items dari pembahasan ini" },
+        );
+    } else if (currentPersona === "health") {
+        recs.push(
+            { icon: "🥗", label: "Saran menu", text: "Berikan contoh menu sehari-hari berdasarkan saran tersebut" },
+            { icon: "⚠️", label: "Hal yang dihindari", text: "Apa saja yang harus dihindari terkait topik ini?" },
+            { icon: "📅", label: "Jadwal rutinitas", text: "Buatkan jadwal rutinitas harian berdasarkan saran tersebut" },
+        );
+    } else if (currentPersona === "hobby") {
+        recs.push(
+            { icon: "🔄", label: "Variasi lain", text: "Berikan variasi atau alternatif lainnya" },
+            { icon: "📸", label: "Tips presentasi", text: "Berikan tips agar hasilnya terlihat lebih menarik" },
+            { icon: "🛒", label: "Alat & bahan", text: "Apa saja alat dan bahan yang dibutuhkan?" },
+        );
+    } else {
+        // General / NovaMind default
+        recs.push(
+            { icon: "🔍", label: "Lebih detail", text: "Jelaskan lebih detail tentang poin terakhir" },
+            { icon: "💡", label: "Ide lanjutan", text: "Berikan ide lanjutan atau pengembangan dari topik ini" },
+            { icon: "📋", label: "Rangkuman", text: "Buatkan rangkuman singkat dari pembahasan ini" },
+        );
+    }
+
+    return recs;
 }
 
 // ==================== IMAGE HANDLING ====================
@@ -288,6 +435,9 @@ function appendMessage(role, content, type, fileUrl = null) {
     const wrapper = document.createElement("div");
     wrapper.className = `message-wrapper flex ${role === "user" ? "justify-end" : "justify-start"} animate-fadeIn`;
 
+    const persona = config.personas[currentPersona] || config.personas["general"];
+    const personaIcon = persona.icon || "✨";
+
     if (role === "user") {
         wrapper.innerHTML = `
             <div class="max-w-[80%] lg:max-w-[70%]">
@@ -301,10 +451,8 @@ function appendMessage(role, content, type, fileUrl = null) {
     } else {
         wrapper.innerHTML = `
             <div class="flex items-start gap-3 max-w-[85%] lg:max-w-[75%]">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
-                    </svg>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 mt-1 text-sm">
+                    ${personaIcon}
                 </div>
                 <div>
                     <div class="assistant-bubble px-4 py-3 rounded-2xl rounded-tl-md bg-gray-800/60 border border-gray-700/30 text-gray-200 shadow-lg">
@@ -365,32 +513,33 @@ function renderChatList() {
     if (!config.chats || config.chats.length === 0) return;
 
     config.chats.forEach((chat) => {
-        addChatListItem(chat.id, chat.title);
+        addChatListItem(chat.id, chat.title, chat.persona);
     });
 }
 
-function addChatListItem(id, title) {
+function addChatListItem(id, title, persona) {
     // Remove existing item with same ID
     const existing = chatList.querySelector(`[data-chat-id="${id}"]`);
     if (existing) existing.remove();
+
+    const personaConfig = config.personas[persona] || config.personas["general"];
+    const icon = personaConfig ? personaConfig.icon : "💬";
 
     const item = document.createElement("button");
     item.className = `chat-list-item w-full text-left px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 transition-all duration-200 truncate ${currentChatId === id ? "bg-gray-800/50 text-gray-200" : ""}`;
     item.dataset.chatId = id;
     item.innerHTML = `
         <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 flex-shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-            </svg>
+            <span class="flex-shrink-0 text-sm">${icon}</span>
             <span class="truncate">${escapeHtml(title)}</span>
         </div>
     `;
-    item.addEventListener("click", () => loadChat(id, title));
+    item.addEventListener("click", () => loadChat(id, title, persona));
     chatList.prepend(item);
 }
 
-function updateChatList(chatId, title) {
-    addChatListItem(chatId, title);
+function updateChatList(chatId, title, persona) {
+    addChatListItem(chatId, title, persona || currentPersona);
     highlightActiveChat(chatId);
 }
 
@@ -404,13 +553,15 @@ function highlightActiveChat(chatId) {
     });
 }
 
-async function loadChat(chatId, title) {
+async function loadChat(chatId, title, persona) {
     if (isProcessing) return;
 
     currentChatId = chatId;
+    currentPersona = persona || "general";
     chatTitle.textContent = title;
     deleteChatBtn.classList.remove("hidden");
     highlightActiveChat(chatId);
+    updateHeaderForPersona(currentPersona);
 
     // Clear messages
     messagesEl.innerHTML = "";
@@ -430,10 +581,16 @@ async function loadChat(chatId, title) {
             },
         );
 
-        const messages = await response.json();
+        const data = await response.json();
 
+        if (data.persona) {
+            currentPersona = data.persona;
+            updateHeaderForPersona(currentPersona);
+        }
+
+        const messages = data.messages || data;
         messages.forEach((msg) => {
-            appendMessage(msg.role, msg.content, msg.type, msg.file_path);
+            appendMessage(msg.role, msg.content, msg.type, msg.file_path || msg.file_url);
         });
     } catch (error) {
         appendError("Gagal memuat riwayat chat");
@@ -442,7 +599,10 @@ async function loadChat(chatId, title) {
 
 async function createNewChat() {
     currentChatId = null;
-    chatTitle.textContent = "Chat Baru";
+    currentPersona = "general";
+    chatTitle.textContent = "NovaMind AI";
+    chatPersonaLabel.textContent = "Ignite Ideas with AI";
+    headerPersonaIcon.textContent = "✨";
     deleteChatBtn.classList.add("hidden");
 
     // Clear active state
@@ -457,6 +617,8 @@ async function createNewChat() {
     if (welcomeMessage) {
         welcomeMessage.style.display = "";
         messagesEl.appendChild(welcomeMessage);
+        // Re-select general persona
+        selectPersona("general");
     }
 
     closeSidebar();

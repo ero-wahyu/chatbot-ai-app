@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Chat - Chatbot AI')
+@section('title', 'Chat — NovaMind AI')
 
 @section('content')
 <div class="flex h-screen overflow-hidden" id="chat-app">
@@ -8,6 +8,17 @@
     <aside id="sidebar" class="sidebar w-72 bg-gray-900/80 backdrop-blur-xl border-r border-gray-800/50 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 -translate-x-full fixed lg:relative h-full z-30">
         {{-- Sidebar Header --}}
         <div class="p-4 border-b border-gray-800/50">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">NovaMind AI</h1>
+                    <p class="text-[10px] text-gray-500">Ignite Ideas with AI</p>
+                </div>
+            </div>
             <button id="new-chat-btn" class="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 hover:from-indigo-600/30 hover:to-purple-600/30 border border-indigo-500/20 rounded-xl text-gray-200 transition-all duration-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -48,14 +59,12 @@
                 </svg>
             </button>
             <div class="flex items-center gap-3 flex-1 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                    </svg>
+                <div id="header-persona-icon" class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-lg">
+                    ✨
                 </div>
                 <div class="min-w-0">
-                    <h2 id="chat-title" class="text-sm font-semibold text-gray-200 truncate">Chat Baru</h2>
-                    <p class="text-xs text-gray-500">Gemini AI</p>
+                    <h2 id="chat-title" class="text-sm font-semibold text-gray-200 truncate">NovaMind AI</h2>
+                    <p id="chat-persona-label" class="text-xs text-gray-500">Ignite Ideas with AI</p>
                 </div>
             </div>
             <button id="delete-chat-btn" class="p-2 hover:bg-red-500/10 rounded-lg transition-colors group hidden" title="Hapus chat">
@@ -68,27 +77,33 @@
         {{-- Messages Area --}}
         <div id="messages-container" class="flex-1 overflow-y-auto custom-scrollbar">
             <div id="messages" class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-                {{-- Welcome message --}}
-                <div id="welcome-message" class="flex flex-col items-center justify-center h-full min-h-[60vh] text-center">
+                {{-- Welcome message with persona selector --}}
+                <div id="welcome-message" class="flex flex-col items-center justify-center min-h-[60vh] text-center">
                     <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/20 mb-6">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>
                         </svg>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-200 mb-2">Halo, {{ $guest->name }}! 👋</h2>
-                    <p class="text-gray-400 max-w-md text-sm leading-relaxed">
-                        Saya adalah asisten AI berbasis Gemini. Kirim pesan teks, unggah gambar, atau rekam suara — saya siap membantu Anda!
+                    <p class="text-gray-400 max-w-lg text-sm leading-relaxed mb-6">
+                        Selamat datang di <strong class="text-indigo-400">NovaMind AI</strong> — Ignite Ideas with AI! Pilih mode asisten atau langsung mulai chat.
                     </p>
-                    <div class="flex flex-wrap gap-2 mt-6 justify-center">
-                        <button class="suggestion-btn px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 rounded-xl text-sm text-gray-300 transition-all duration-200" data-text="Apa itu kecerdasan buatan?">
-                            🤖 Apa itu AI?
+
+                    {{-- Persona Selector Grid --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full max-w-2xl mb-6">
+                        @foreach($personas as $key => $p)
+                        <button class="persona-card group p-3 bg-gray-800/40 hover:bg-gray-800/70 border border-gray-700/30 hover:border-indigo-500/30 rounded-xl transition-all duration-200 text-left {{ $key === 'general' ? 'ring-2 ring-indigo-500/50 bg-gray-800/60' : '' }}"
+                            data-persona="{{ $key }}">
+                            <div class="text-2xl mb-1.5">{{ $p['icon'] }}</div>
+                            <div class="text-xs font-semibold text-gray-200 group-hover:text-indigo-300 transition-colors">{{ $p['name'] }}</div>
+                            <div class="text-[10px] text-gray-500 mt-0.5 line-clamp-2">{{ $p['description'] }}</div>
                         </button>
-                        <button class="suggestion-btn px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 rounded-xl text-sm text-gray-300 transition-all duration-200" data-text="Tuliskan puisi tentang teknologi">
-                            ✍️ Tulis puisi
-                        </button>
-                        <button class="suggestion-btn px-4 py-2 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 rounded-xl text-sm text-gray-300 transition-all duration-200" data-text="Jelaskan cara kerja machine learning secara sederhana">
-                            🧠 Machine Learning
-                        </button>
+                        @endforeach
+                    </div>
+
+                    {{-- Dynamic Suggestions --}}
+                    <div id="persona-suggestions" class="flex flex-wrap gap-2 justify-center">
+                        {{-- Will be rendered by JS --}}
                     </div>
                 </div>
             </div>
@@ -169,7 +184,7 @@
                 </div>
 
                 <p class="text-center text-gray-600 text-xs mt-3">
-                    Chatbot AI menggunakan Gemini AI • Respons mungkin tidak selalu akurat
+                    NovaMind AI — Ignite Ideas with AI • Powered by Gemini
                 </p>
             </div>
         </div>
@@ -177,11 +192,22 @@
 </div>
 
 {{-- Pass data to JS --}}
+@php
+    $chatsData = $chats->map(function ($c) {
+        return [
+            'id' => $c->id,
+            'title' => $c->title,
+            'persona' => $c->persona,
+            'updated_at' => $c->updated_at->toISOString(),
+        ];
+    });
+@endphp
 <script>
     window.ChatConfig = {
         csrfToken: '{{ csrf_token() }}',
         guestName: @json($guest->name),
-        chats: @json($chats->map(fn($c) => ['id' => $c->id, 'title' => $c->title, 'updated_at' => $c->updated_at->toISOString()])),
+        personas: @json($personas),
+        chats: @json($chatsData),
         routes: {
             sendText: '{{ route("chat.text") }}',
             sendImage: '{{ route("chat.image") }}',
